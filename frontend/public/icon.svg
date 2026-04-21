@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">HostelFlow Icon</title>
+  <desc id="desc">Rounded square app icon with the letters HF.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D4FF" />
+      <stop offset="100%" stop-color="#06D6A0" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#060B18" />
+  <rect x="18" y="18" width="220" height="220" rx="48" fill="url(#bg)" opacity="0.12" />
+  <path d="M72 68h28v46h56V68h28v120h-28v-48h-56v48H72z" fill="#E8EDF8" />
+  <path d="M110 96h74v24h-74z" fill="#00D4FF" opacity="0.85" />
+</svg>

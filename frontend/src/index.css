@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --hf-bg: #fff7f7;
+    --hf-surface: #ffffff;
+    --hf-surface-soft: #fff1f2;
+    --hf-border: #fecdd3;
+    --hf-border-strong: #fda4af;
+    --hf-text: #3f0d12;
+    --hf-text-muted: #9f1239;
+    --hf-accent: #dc2626;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(248, 113, 113, 0.18), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(244, 63, 94, 0.12), transparent 26%),
+      var(--hf-bg);
+    color: var(--hf-text);
+    -webkit-font-smoothing: antialiased;
+  }
+  input[type='datetime-local']::-webkit-calendar-picker-indicator {
+    filter: sepia(1) saturate(8) hue-rotate(-18deg) brightness(0.75);
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #ffe4e6; }
+  ::-webkit-scrollbar-thumb { background: #f87171; border-radius: 4px; }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(253, 164, 175, 0.9);
+  }
+}

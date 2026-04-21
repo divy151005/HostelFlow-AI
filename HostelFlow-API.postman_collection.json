@@ -1,0 +1,295 @@
+{
+  "info": {
+    "name": "HostelFlow AI API",
+    "description": "Complete API collection for HostelFlow AI system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",       "value": "http://localhost:8080" },
+    { "key": "studentToken",  "value": "" },
+    { "key": "wardenToken",   "value": "" },
+    { "key": "parentToken",   "value": "" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\":\"Test Student\",\"email\":\"test@student.com\",\"password\":\"password\",\"phone\":\"9876543210\",\"role\":\"STUDENT\",\"rollNumber\":\"CS2024001\",\"roomNumber\":\"A-101\",\"hostelBlock\":\"A\",\"course\":\"B.Tech CSE\",\"year\":\"1st\",\"parentEmail\":\"parent@test.com\"}"
+            }
+          }
+        },
+        {
+          "name": "Login Student",
+          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json();", "pm.collectionVariables.set('studentToken', json.data.accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"student@hostelflow.com\",\"password\":\"password\"}" }
+          }
+        },
+        {
+          "name": "Login Warden",
+          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json();", "pm.collectionVariables.set('wardenToken', json.data.accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"warden@hostelflow.com\",\"password\":\"password\"}" }
+          }
+        },
+        {
+          "name": "Login Parent",
+          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json();", "pm.collectionVariables.set('parentToken', json.data.accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"parent@hostelflow.com\",\"password\":\"password\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎓 Student",
+      "item": [
+        {
+          "name": "Apply Leave",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/student/leave/apply",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"LEAVE\",\"reason\":\"Home visit for festival\",\"destination\":\"Jaipur\",\"fromDate\":\"2024-12-20T08:00:00\",\"toDate\":\"2024-12-22T18:00:00\",\"expectedReturn\":\"2024-12-22T20:00:00\"}"
+            }
+          }
+        },
+        {
+          "name": "Apply Outing",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/student/leave/apply",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"OUTING\",\"reason\":\"Medical checkup\",\"destination\":\"City Hospital\",\"fromDate\":\"2024-12-15T10:00:00\",\"toDate\":\"2024-12-15T14:00:00\",\"expectedReturn\":\"2024-12-15T14:00:00\"}"
+            }
+          }
+        },
+        {
+          "name": "Get Leave History",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/student/leave/history?page=0&size=10",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }]
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/student/profile",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }]
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/student/notifications",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }]
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/student/notifications/unread-count",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Warden",
+      "item": [
+        {
+          "name": "Get All Leaves",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/leaves?page=0&size=20",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        },
+        {
+          "name": "Get Pending Leaves",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/leaves?status=PENDING_WARDEN",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        },
+        {
+          "name": "Approve Leave",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/warden/leaves/LEAVE_ID_HERE/action",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{wardenToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"action\":\"APPROVE\",\"remark\":\"Approved. Please return on time.\"}" }
+          }
+        },
+        {
+          "name": "Reject Leave",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/warden/leaves/LEAVE_ID_HERE/action",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{wardenToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"action\":\"REJECT\",\"remark\":\"Exams upcoming. Cannot approve.\"}" }
+          }
+        },
+        {
+          "name": "Currently Out Students",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/leaves/currently-out",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/dashboard/stats",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        },
+        {
+          "name": "High Risk Students",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/students/high-risk",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        },
+        {
+          "name": "All Students",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/warden/students/all",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wardenToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍👩‍👦 Parent",
+      "item": [
+        {
+          "name": "Approve Leave (YES)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/parent/leave/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{parentToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"leaveId\":\"LEAVE_ID_HERE\",\"action\":\"YES\",\"message\":\"Okay, be careful and return on time.\"}" }
+          }
+        },
+        {
+          "name": "Reject Leave (NO)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/parent/leave/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{parentToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"leaveId\":\"LEAVE_ID_HERE\",\"action\":\"NO\",\"message\":\"Exams are coming. Please focus on studies.\"}" }
+          }
+        },
+        {
+          "name": "Get Linked Student",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/parent/student/profile",
+            "header": [{ "key": "Authorization", "value": "Bearer {{parentToken}}" }]
+          }
+        },
+        {
+          "name": "Student Leave History",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/parent/student/leaves",
+            "header": [{ "key": "Authorization", "value": "Bearer {{parentToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔳 QR Gate",
+      "item": [
+        {
+          "name": "Scan QR OUT (exit hostel)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/qr/scan",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"qrToken\":\"YOUR_QR_TOKEN_HERE\",\"scanType\":\"OUT\"}" }
+          }
+        },
+        {
+          "name": "Scan QR IN (return to hostel)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/qr/scan",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"qrToken\":\"YOUR_QR_TOKEN_HERE\",\"scanType\":\"IN\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8000/health"
+          }
+        },
+        {
+          "name": "Predict Risk",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8000/predict/risk",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"student_id\":\"123\",\"late_count\":4,\"total_leaves\":10,\"late_returns\":4}" }
+          }
+        }
+      ]
+    }
+  ]
+}

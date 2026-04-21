@@ -1,0 +1,17 @@
+
+> hostelflow-frontend@1.0.0 dev
+> vite --host 0.0.0.0 --port 3000 --strictPort
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+  VITE v5.4.21  ready in 244 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.1.11:3000/
+(node:87774) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/anshupranshu/Desktop/HostelFlow%20AI/frontend/postcss.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/anshupranshu/Desktop/HostelFlow AI/frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+12:15:20 AM [vite] page reload index.html
+12:15:20 AM [vite] vite.config.js changed, restarting server...
+12:15:20 AM [vite] server restarted.
