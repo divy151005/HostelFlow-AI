@@ -26,6 +26,9 @@ public class WardenController {
     private final LeaveService leaveService;
     private final AnalyticsService analyticsService;
     private final NotificationService notificationService;
+    private final SupervisionService supervisionService;
+    private final MaintenanceService maintenanceService;
+    private final IncidentService incidentService;
     private final UserRepository userRepo;
 
     private User getUser(UserDetails ud) {
@@ -55,6 +58,86 @@ public class WardenController {
     @GetMapping("/leaves/currently-out")
     public ResponseEntity<ApiResponse<List<LeaveRequest>>> currentlyOut() {
         return ResponseEntity.ok(ApiResponse.ok(leaveService.getCurrentlyOut()));
+    }
+
+    // ── Supervision Overview & Live Status ──
+
+    @GetMapping("/supervision/overview")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSupervisionOverview() {
+        return ResponseEntity.ok(ApiResponse.ok(supervisionService.getWardenSupervisionOverview()));
+    }
+
+    @GetMapping("/students/{studentId}/activity")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getStudentActivity(@PathVariable String studentId) {
+        return ResponseEntity.ok(ApiResponse.ok(supervisionService.getStudentActivity(studentId)));
+    }
+
+    // ── Maintenance Tasks ──
+
+    @GetMapping("/maintenance")
+    public ResponseEntity<ApiResponse<List<MaintenanceTask>>> getMaintenanceTasks() {
+        return ResponseEntity.ok(ApiResponse.ok(maintenanceService.getAllTasks()));
+    }
+
+    @PostMapping("/maintenance")
+    public ResponseEntity<ApiResponse<MaintenanceTask>> createMaintenanceTask(
+            @AuthenticationPrincipal UserDetails ud,
+            @RequestBody MaintenanceTask task) {
+        User warden = getUser(ud);
+        return ResponseEntity.ok(ApiResponse.ok("Maintenance task created",
+                maintenanceService.createTask(warden, task)));
+    }
+
+    @PatchMapping("/maintenance/{id}")
+    public ResponseEntity<ApiResponse<MaintenanceTask>> updateMaintenanceTask(
+            @AuthenticationPrincipal UserDetails ud,
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        User warden = getUser(ud);
+        return ResponseEntity.ok(ApiResponse.ok("Maintenance task updated",
+                maintenanceService.updateTask(warden, id, body)));
+    }
+
+    @GetMapping("/maintenance/stats")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMaintenanceStats() {
+        return ResponseEntity.ok(ApiResponse.ok(maintenanceService.getMaintenanceStats()));
+    }
+
+    // ── Student Incidents ──
+
+    @GetMapping("/incidents")
+    public ResponseEntity<ApiResponse<List<StudentIncident>>> getIncidents() {
+        return ResponseEntity.ok(ApiResponse.ok(incidentService.getAllIncidents()));
+    }
+
+    @PostMapping("/incidents")
+    public ResponseEntity<ApiResponse<StudentIncident>> registerIncident(
+            @AuthenticationPrincipal UserDetails ud,
+            @RequestBody Map<String, String> body) {
+        User warden = getUser(ud);
+        String studentId = body.get("studentId");
+        String typeStr = body.getOrDefault("type", "OTHER");
+        String sevStr = body.getOrDefault("severity", "MEDIUM");
+        String title = body.getOrDefault("title", "Hostel Incident Notice");
+        String description = body.getOrDefault("description", "");
+
+        StudentIncident.IncidentType type = StudentIncident.IncidentType.valueOf(typeStr.toUpperCase());
+        StudentIncident.Severity severity = StudentIncident.Severity.valueOf(sevStr.toUpperCase());
+
+        return ResponseEntity.ok(ApiResponse.ok("Incident registered & notices sent",
+                incidentService.registerIncident(warden, studentId, type, severity, title, description)));
+    }
+
+    @PatchMapping("/incidents/{id}/action")
+    public ResponseEntity<ApiResponse<StudentIncident>> recordIncidentAction(
+            @AuthenticationPrincipal UserDetails ud,
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        User warden = getUser(ud);
+        String actionNote = body.getOrDefault("actionNote", "Resolved by warden");
+        String status = body.getOrDefault("status", "CLOSED");
+        return ResponseEntity.ok(ApiResponse.ok("Incident action saved",
+                incidentService.recordAction(warden, id, actionNote, status)));
     }
 
     // ── Analytics ──

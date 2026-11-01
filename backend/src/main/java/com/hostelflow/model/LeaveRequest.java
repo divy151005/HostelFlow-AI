@@ -57,6 +57,12 @@ public class LeaveRequest {
     private long lateByMinutes;
     private boolean escalated;
 
+    // Hostel Wi-Fi Security Verification
+    @Builder.Default
+    private boolean wifiVerified = false;
+    private String wifiSsid;
+    private String applicationIp;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

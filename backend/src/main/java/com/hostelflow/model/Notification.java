@@ -32,6 +32,20 @@ public class Notification {
         QR_SCANNED,
         ESCALATION,
         PARENT_APPROVAL_NEEDED,
-        MENTOR_APPROVAL_NEEDED
+        MENTOR_APPROVAL_NEEDED,
+        OVERDUE_ALERT,
+        COMPLAINT_UPDATE,
+        MAINTENANCE_UPDATE,
+        NEW_MESSAGE,
+        INCIDENT_NOTICE,
+        SOS_ALERT,
+        ANNOUNCEMENT,
+        ROOM_SWAP_REQUEST,
+        ROOM_SWAP_APPROVED,
+        ROOM_SWAP_REJECTED,
+        VISITOR_PASS_APPROVED,
+        FINE_ISSUED,
+        NO_DUES_UPDATE,
+        LAUNDRY_REMINDER
     }
 }

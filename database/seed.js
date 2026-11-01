@@ -19,6 +19,7 @@ db.users.insertMany([
     course: "B.Tech CSE",
     year: "3rd",
     parentEmail: "parent@hostelflow.com",
+    mentorEmail: "mentor@hostelflow.com",
     lateReturnCount: 1,
     riskLevel: "LOW",
     enabled: true,
@@ -62,8 +63,32 @@ db.users.insertMany([
     hostelBlock: "B",
     course: "B.Tech CSE",
     year: "3rd",
+    parentEmail: "parent@hostelflow.com",
+    mentorEmail: "mentor@hostelflow.com",
     lateReturnCount: 4,
     riskLevel: "HIGH",
+    enabled: true,
+    accountNonLocked: true,
+    createdAt: new Date()
+  },
+  {
+    _id: ObjectId("65a000000000000000000005"),
+    fullName: "Anita Verma",
+    email: "mentor@hostelflow.com",
+    password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    phone: "9876500003",
+    role: "MENTOR",
+    enabled: true,
+    accountNonLocked: true,
+    createdAt: new Date()
+  },
+  {
+    _id: ObjectId("65a000000000000000000006"),
+    fullName: "Hostel Administrator",
+    email: "admin@hostelflow.com",
+    password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    phone: "9876500004",
+    role: "ADMIN",
     enabled: true,
     accountNonLocked: true,
     createdAt: new Date()
@@ -84,9 +109,9 @@ db.leave_requests.insertMany([
     fromDate: new Date(),
     toDate: new Date(Date.now() + 3*60*60*1000),
     expectedReturn: new Date(Date.now() + 4*60*60*1000),
-    status: "PENDING_WARDEN",
-    wardenApproved: false,
-    parentApproved: false,
+    status: "APPROVED",
+    wardenApproved: true,
+    parentApproved: true,
     qrToken: "SAMPLE_QR_TOKEN_001",
     qrScannedOut: false,
     qrScannedIn: false,
@@ -106,15 +131,40 @@ db.leave_requests.insertMany([
     toDate: new Date(Date.now() - 5*24*60*60*1000),
     expectedReturn: new Date(Date.now() - 5*24*60*60*1000),
     actualReturn: new Date(Date.now() - 5*24*60*60*1000 + 90*60*1000),
-    status: "LATE",
+    status: "COMPLETED",
     wardenApproved: true,
     parentApproved: true,
     qrScannedOut: true,
     qrScannedIn: true,
+    scannedOutAt: new Date(Date.now() - 7*24*60*60*1000),
+    scannedInAt: new Date(Date.now() - 5*24*60*60*1000 + 90*60*1000),
     isLate: true,
     lateByMinutes: 90,
     escalated: true,
     createdAt: new Date(Date.now() - 8*24*60*60*1000)
+  }
+]);
+
+// ── Announcements ──
+db.announcements.drop();
+db.announcements.insertMany([
+  {
+    title: "Hostel Curfew & Safety Guidelines",
+    content: "All residents are reminded that turnstiles close promptly at 08:00 PM for weekday outings. Ensure you carry your student gate pass.",
+    authorName: "Dr. Suresh Kumar",
+    authorRole: "WARDEN",
+    priority: "IMPORTANT",
+    targetRoles: ["ALL"],
+    createdAt: new Date()
+  },
+  {
+    title: "Mess Committee Review & Hygiene Audit",
+    content: "The monthly kitchen hygiene inspection will take place on Saturday. Students can submit daily food quality ratings in Hostel Care.",
+    authorName: "Hostel Administrator",
+    authorRole: "ADMIN",
+    priority: "NORMAL",
+    targetRoles: ["ALL"],
+    createdAt: new Date()
   }
 ]);
 
@@ -126,7 +176,14 @@ db.leave_requests.createIndex({ status: 1 });
 db.leave_requests.createIndex({ qrToken: 1 });
 db.notifications.createIndex({ userId: 1 });
 db.notifications.createIndex({ createdAt: -1 });
+db.chat_messages.createIndex({ conversationId: 1 });
+db.student_incidents.createIndex({ studentId: 1 });
+db.maintenance_tasks.createIndex({ roomNumber: 1 });
 
 print("✅ HostelFlow seed data loaded successfully!");
-print("📧 Test accounts: student@hostelflow.com | warden@hostelflow.com | parent@hostelflow.com");
-print("🔑 Password for all: password");
+print("📧 Test accounts:");
+print("  Student: student@hostelflow.com | password");
+print("  Mentor:  mentor@hostelflow.com  | password");
+print("  Warden:  warden@hostelflow.com  | password");
+print("  Parent:  parent@hostelflow.com  | password");
+print("  Admin:   admin@hostelflow.com   | password");

@@ -14,6 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/parent")
 @RequiredArgsConstructor
@@ -22,6 +25,8 @@ public class ParentController {
 
     private final LeaveService leaveService;
     private final NotificationService notificationService;
+    private final SupervisionService supervisionService;
+    private final IncidentService incidentService;
     private final UserRepository userRepo;
     private final LeaveRequestRepository leaveRepo;
 
@@ -46,6 +51,13 @@ public class ParentController {
         return ResponseEntity.ok(ApiResponse.ok(student));
     }
 
+    @GetMapping("/student/activity")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getLinkedStudentActivity(@AuthenticationPrincipal UserDetails ud) {
+        User parent = getUser(ud);
+        if (parent.getLinkedStudentId() == null) throw new RuntimeException("No linked student");
+        return ResponseEntity.ok(ApiResponse.ok(supervisionService.getStudentActivity(parent.getLinkedStudentId())));
+    }
+
     @GetMapping("/student/leaves")
     public ResponseEntity<ApiResponse<Page<LeaveRequest>>> getStudentLeaves(
             @AuthenticationPrincipal UserDetails ud,
@@ -53,6 +65,13 @@ public class ParentController {
         User parent = getUser(ud);
         return ResponseEntity.ok(ApiResponse.ok(
                 leaveService.getStudentHistory(parent.getLinkedStudentId(), page, 15)));
+    }
+
+    @GetMapping("/incidents")
+    public ResponseEntity<ApiResponse<List<StudentIncident>>> getStudentIncidents(@AuthenticationPrincipal UserDetails ud) {
+        User parent = getUser(ud);
+        if (parent.getLinkedStudentId() == null) return ResponseEntity.ok(ApiResponse.ok(List.of()));
+        return ResponseEntity.ok(ApiResponse.ok(incidentService.getStudentIncidents(parent.getLinkedStudentId())));
     }
 
     @GetMapping("/notifications")

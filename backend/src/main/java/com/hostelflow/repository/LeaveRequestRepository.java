@@ -12,8 +12,10 @@ import java.util.Optional;
 public interface LeaveRequestRepository extends MongoRepository<LeaveRequest, String> {
     Page<LeaveRequest> findByStudentId(String studentId, Pageable pageable);
     List<LeaveRequest> findByStudentId(String studentId);
+    List<LeaveRequest> findByStudentIdOrderByCreatedAtDesc(String studentId);
     Page<LeaveRequest> findByStatus(LeaveRequest.Status status, Pageable pageable);
     List<LeaveRequest> findByStatus(LeaveRequest.Status status);
+    long countByStatus(LeaveRequest.Status status);
     Optional<LeaveRequest> findByQrToken(String qrToken);
 
     @Query("{'status': {$in: ['APPROVED']}, 'qrScannedOut': true, 'qrScannedIn': false, 'expectedReturn': {$lt: ?0}}")
@@ -31,6 +33,9 @@ public interface LeaveRequestRepository extends MongoRepository<LeaveRequest, St
     List<LeaveRequest> findByDateRange(LocalDateTime from, LocalDateTime to);
 
     List<LeaveRequest> findByStudentIdAndStatus(String studentId, LeaveRequest.Status status);
+
+    Page<LeaveRequest> findByStudentIdIn(List<String> studentIds, Pageable pageable);
+    Page<LeaveRequest> findByStudentIdInAndStatus(List<String> studentIds, LeaveRequest.Status status, Pageable pageable);
 
     @Query("{'status': 'APPROVED', 'qrScannedOut': true, 'qrScannedIn': false}")
     List<LeaveRequest> findCurrentlyOut();

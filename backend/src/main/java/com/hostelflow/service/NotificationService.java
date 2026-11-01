@@ -20,6 +20,7 @@ public class NotificationService {
 
     public Notification createNotification(String userId, Notification.NotificationType type,
                                             String title, String message, String referenceId) {
+        if (userId == null) return null;
         Notification n = Notification.builder()
                 .userId(userId)
                 .type(type)
@@ -40,6 +41,29 @@ public class NotificationService {
     public void notifyMentors(Notification.NotificationType type, String title,
                                String message, String referenceId) {
         notifyRole(User.Role.MENTOR, type, title, message, referenceId);
+    }
+
+    public void notifyAdmins(Notification.NotificationType type, String title,
+                             String message, String referenceId) {
+        notifyRole(User.Role.ADMIN, type, title, message, referenceId);
+    }
+
+    public void notifyLinkedParent(String studentId, Notification.NotificationType type,
+                                   String title, String message, String referenceId) {
+        userRepo.findByLinkedStudentId(studentId).ifPresent(parent ->
+            createNotification(parent.getId(), type, title, message, referenceId)
+        );
+    }
+
+    public void notifyStudentMentor(String studentId, Notification.NotificationType type,
+                                    String title, String message, String referenceId) {
+        userRepo.findById(studentId).ifPresent(student -> {
+            if (student.getMentorEmail() != null && !student.getMentorEmail().isBlank()) {
+                userRepo.findByEmail(student.getMentorEmail()).ifPresent(mentor ->
+                    createNotification(mentor.getId(), type, title, message, referenceId)
+                );
+            }
+        });
     }
 
     private void notifyRole(User.Role role, Notification.NotificationType type, String title,

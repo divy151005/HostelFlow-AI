@@ -67,6 +67,8 @@ mongosh hostelflow < database/seed.js  # Test accounts
 | Student | student@hostelflow.com | password |
 | Warden | warden@hostelflow.com | password |
 | Parent | parent@hostelflow.com | password |
+| Mentor | mentor@hostelflow.com | password |
+| Admin | admin@hostelflow.com | password |
 
 ---
 
@@ -74,11 +76,13 @@ mongosh hostelflow < database/seed.js  # Test accounts
 
 **Auth** `/api/auth/login` (JWT Bearer)
 
-**Student** `/api/student/*` Apply leave, QR, history
+**Student** `/api/student/*` Apply leave, QR, history, hostel complaints, weekly feedback
 
-**Warden** `/api/warden/*` Approve, analytics, high-risk list
+**Warden** `/api/warden/*` Approve, analytics, high-risk list, complaint and feedback operations
 
 **Parent** `/api/parent/*` Approve child leaves
+
+**Admin** `/api/admin/*` User oversight and institution operations
 
 **AI** localhost:8000 `/predict/risk` (ML risk score)
 

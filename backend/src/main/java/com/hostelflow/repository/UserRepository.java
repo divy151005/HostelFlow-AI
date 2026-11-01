@@ -12,6 +12,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     boolean existsByEmail(String email);
     boolean existsByRollNumber(String rollNumber);
     List<User> findByRole(User.Role role);
+    long countByRole(User.Role role);
     List<User> findByHostelBlock(String block);
 
     @Query("{'role': 'STUDENT', 'lateReturnCount': {$gte: ?0}}")
@@ -21,4 +22,5 @@ public interface UserRepository extends MongoRepository<User, String> {
     List<User> findStudentsByRiskLevel(User.RiskLevel riskLevel);
 
     Optional<User> findByLinkedStudentId(String studentId);
+    List<User> findByMentorEmail(String mentorEmail);
 }

@@ -16,6 +16,13 @@ else
     echo "✅ Manual cleanup complete"
 fi
 
+if [ -f .mongod_pid ]; then
+    MONGOD_PID=$(cat .mongod_pid)
+    echo "🛑 Stopping MongoDB (PID: $MONGOD_PID)..."
+    kill "$MONGOD_PID" 2>/dev/null || true
+    rm -f .mongod_pid
+    echo "✅ MongoDB stopped"
+fi
+
 echo ""
 echo "🔄 Run ./run-all.sh to restart"
-

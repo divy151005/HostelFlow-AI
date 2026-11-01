@@ -10,7 +10,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const roleRoutes = { STUDENT: '/student', WARDEN: '/warden', MENTOR: '/mentor', PARENT: '/parent' }
+  const roleRoutes = { STUDENT: '/student', WARDEN: '/warden', MENTOR: '/mentor', PARENT: '/parent', ADMIN: '/admin' }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -32,6 +32,7 @@ export default function LoginPage() {
       WARDEN:  { email: 'warden@hostelflow.com',  password: 'password' },
       MENTOR:  { email: 'mentor@hostelflow.com',  password: 'password' },
       PARENT:  { email: 'parent@hostelflow.com',  password: 'password' },
+      ADMIN:   { email: 'admin@hostelflow.com',   password: 'password' },
     }
     if (creds[role]) setForm(creds[role])
   }
@@ -107,7 +108,7 @@ export default function LoginPage() {
           <div className="mt-6 pt-5 border-t border-rose-200">
             <p className="text-[#9f1239] text-xs text-center mb-3">Quick demo login</p>
               <div className="flex gap-2">
-                {['STUDENT','WARDEN','MENTOR','PARENT'].map(role => (
+                {['STUDENT','WARDEN','MENTOR','PARENT','ADMIN'].map(role => (
                 <button key={role} type="button" onClick={() => fillDemo(role)}
                   className="flex-1 text-xs py-2 rounded-lg border border-rose-200 text-[#7f1d1d] hover:border-red-400 hover:text-red-700 hover:bg-rose-50 transition-colors">
                   {role}

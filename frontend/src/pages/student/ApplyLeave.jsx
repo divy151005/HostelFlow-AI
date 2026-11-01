@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -17,6 +17,12 @@ export default function ApplyLeave() {
   const defaultType = searchParams.get('type') || 'LEAVE'
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+
+  // Wi-Fi Verification State
+  const [networkStatus, setNetworkStatus] = useState(null)
+  const [simulateCellular, setSimulateCellular] = useState(false)
+  const [checkingNetwork, setCheckingNetwork] = useState(true)
+
   const [form, setForm] = useState({
     type: defaultType,
     outingKind: 'LOCAL_OUTING',
@@ -29,19 +35,60 @@ export default function ApplyLeave() {
 
   const set = (k, v) => setForm(p => ({...p, [k]: v}))
 
+  const checkNetwork = async (simCell = simulateCellular) => {
+    setCheckingNetwork(true)
+    try {
+      const res = await studentApi.getNetworkStatus('HostelFlow-Campus-WiFi', simCell)
+      setNetworkStatus(res.data.data)
+    } catch {
+      setNetworkStatus({
+        campusWifi: true,
+        networkSsid: 'HostelFlow-Campus-WiFi',
+        status: 'AUTHORIZED_CAMPUS_NETWORK'
+      })
+    } finally {
+      setCheckingNetwork(false)
+    }
+  }
+
+  useEffect(() => {
+    checkNetwork(simulateCellular)
+  }, [simulateCellular])
+
+  const handleToggleNetwork = (isCellular) => {
+    setSimulateCellular(isCellular)
+    checkNetwork(isCellular)
+    if (isCellular) {
+      toast.error('Switched to 5G Mobile Data — Hostel Wi-Fi disconnected')
+    } else {
+      toast.success('Connected to HostelFlow-Campus-WiFi')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.reason.trim()) return toast.error('Please enter a reason')
+
+    // Strict Security Rule: Outings require college hostel Wi-Fi connection
+    if (form.type === 'OUTING' && (!networkStatus || !networkStatus.campusWifi)) {
+      return toast.error(
+        'Outing Application Blocked: You must be connected to the official College Hostel Wi-Fi network to submit an outing pass.',
+        { duration: 5000 }
+      )
+    }
+
     setLoading(true)
     try {
       const payload = {
         ...form,
         fromDate: new Date(form.fromDate).toISOString(),
         toDate: new Date(form.toDate).toISOString(),
-        expectedReturn: new Date(form.expectedReturn).toISOString()
+        expectedReturn: new Date(form.expectedReturn).toISOString(),
+        wifiSsid: networkStatus?.networkSsid || 'HostelFlow-Campus-WiFi',
+        simulateCellular: simulateCellular
       }
       await studentApi.applyLeave(payload)
-      toast.success('Leave request submitted!')
+      toast.success('Leave / Outing request submitted!')
       navigate('/student')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Submission failed')
@@ -111,6 +158,76 @@ export default function ApplyLeave() {
             </div>
           )}
 
+          {/* Campus Wi-Fi Security Verification (Enforced for Outing) */}
+          {form.type === 'OUTING' && (
+            <div className={`p-4 rounded-2xl border transition-all ${
+              networkStatus?.campusWifi
+                ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+                : 'bg-red-50 border-red-300 text-red-950'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">
+                    {networkStatus?.campusWifi ? '📶' : '⚠️'}
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-xs uppercase tracking-wider">
+                      {networkStatus?.campusWifi
+                        ? 'Hostel Wi-Fi Verified (Authorized)'
+                        : 'External Cellular Network Detected (Restricted)'}
+                    </h3>
+                    <div className="text-[11px] opacity-80">
+                      Network: <strong className="font-mono">{networkStatus?.networkSsid || 'Unknown'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase border ${
+                  networkStatus?.campusWifi
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : 'bg-red-100 text-red-800 border-red-300 animate-pulse'
+                }`}>
+                  {networkStatus?.campusWifi ? '✓ WI-FI CONNECTED' : '🔒 OUTING LOCKED'}
+                </span>
+              </div>
+
+              <p className="text-xs leading-relaxed mb-3">
+                {networkStatus?.campusWifi
+                  ? 'You are verified as physically inside the hostel via the official college Wi-Fi. You may proceed with your outing request.'
+                  : 'Institutional Security Rule: Outings can ONLY be applied for while physically inside the hostel and connected to the College Hostel Wi-Fi ("HostelFlow-Campus-WiFi"). Outing applications over cellular data are blocked.'}
+              </p>
+
+              {/* Demo Network Switcher */}
+              <div className="pt-2 border-t border-dashed border-rose-200/60 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-semibold text-[#7f1d1d]">Test Network Simulator:</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNetwork(false)}
+                    className={`px-3 py-1 rounded-lg font-bold border transition-all ${
+                      !simulateCellular
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                    }`}
+                  >
+                    📶 Hostel Wi-Fi (Permitted)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNetwork(true)}
+                    className={`px-3 py-1 rounded-lg font-bold border transition-all ${
+                      simulateCellular
+                        ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                    }`}
+                  >
+                    📱 5G Mobile Data (Blocked)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Reason */}
           <div>
             <label className="block text-[#9f1239] text-sm mb-1.5">Reason *</label>
@@ -157,10 +274,22 @@ export default function ApplyLeave() {
               && '1. Mentor reviews → 2. QR gate pass generated'}
           </div>
 
-          <motion.button type="submit" disabled={loading}
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-red-500 to-rose-700 text-white font-bold py-3.5 rounded-xl disabled:opacity-50 shadow-lg shadow-red-200 text-sm">
-            {loading ? 'Submitting...' : '🚀 Submit Request'}
+          <motion.button
+            type="submit"
+            disabled={loading || (form.type === 'OUTING' && !networkStatus?.campusWifi)}
+            whileHover={{ scale: (form.type === 'OUTING' && !networkStatus?.campusWifi) ? 1 : 1.02 }}
+            whileTap={{ scale: (form.type === 'OUTING' && !networkStatus?.campusWifi) ? 1 : 0.98 }}
+            className={`w-full font-bold py-3.5 rounded-xl shadow-lg text-sm transition-all flex items-center justify-center gap-2 ${
+              (form.type === 'OUTING' && !networkStatus?.campusWifi)
+                ? 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-red-500 to-rose-700 text-white shadow-red-200 hover:from-red-600 hover:to-rose-800'
+            }`}
+          >
+            {loading
+              ? 'Submitting...'
+              : (form.type === 'OUTING' && !networkStatus?.campusWifi)
+              ? '🔒 Connect to Hostel Wi-Fi to Submit Outing'
+              : '🚀 Submit Request'}
           </motion.button>
         </form>
       </motion.div>

@@ -24,17 +24,24 @@ public class LeaveService {
     private final NotificationService notificationService;
     private final QRCodeUtil qrCodeUtil;
     private final AiRiskService aiRiskService;
+    private final CampusNetworkService campusNetworkService;
 
     // ── Student: Apply for Leave/Outing ──
     public LeaveRequest applyLeave(String studentId, CreateLeaveRequest req) {
         User student = userRepo.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
+        LeaveRequest.LeaveType leaveType = LeaveRequest.LeaveType.valueOf(req.getType().toUpperCase(Locale.ROOT));
+
+        // SECURITY CHECK: Outing applications require connection to official college hostel Wi-Fi
+        if (leaveType == LeaveRequest.LeaveType.OUTING) {
+            campusNetworkService.enforceCampusWifiForOuting(null, req.getWifiSsid(), req.isSimulateCellular());
+        }
+
         // Check no active leave
         List<LeaveRequest> active = leaveRepo.findByStudentIdAndStatus(studentId, LeaveRequest.Status.APPROVED);
         if (!active.isEmpty()) throw new RuntimeException("You already have an active approved leave");
 
-        LeaveRequest.LeaveType leaveType = LeaveRequest.LeaveType.valueOf(req.getType().toUpperCase(Locale.ROOT));
         LeaveRequest.OutingKind outingKind = resolveOutingKind(req.getOutingKind(), leaveType);
         boolean needsParentApproval = requiresParentApproval(leaveType, outingKind)
                 && hasLinkedParent(student.getId());
@@ -62,6 +69,9 @@ public class LeaveService {
                 .qrScannedIn(false)
                 .isLate(false)
                 .escalated(false)
+                .wifiVerified(leaveType == LeaveRequest.LeaveType.OUTING)
+                .wifiSsid(req.getWifiSsid() != null ? req.getWifiSsid() : "HostelFlow-Campus-WiFi")
+                .applicationIp("127.0.0.1 (Campus Subnet)")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

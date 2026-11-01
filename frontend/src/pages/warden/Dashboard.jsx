@@ -7,9 +7,16 @@ import Layout from '../../components/layout/Layout'
 
 const navLinks = [
   { to: '/warden',            icon: '📊', label: 'Dashboard' },
+  { to: '/warden/supervision',icon: '👁️', label: 'Supervision' },
   { to: '/warden/leaves',     icon: '📋', label: 'Leave Requests' },
+  { to: '/warden/rooms',      icon: '🏢', label: 'Room Matrix' },
+  { to: '/warden/mess',       icon: '🍲', label: 'Mess Operations' },
+  { to: '/warden/visitors',   icon: '👥', label: 'Visitor Passes' },
+  { to: '/warden/finance',    icon: '💳', label: 'Fees & No-Dues' },
+  { to: '/warden/operations', icon: '🛠️', label: 'Operations' },
   { to: '/warden/students',   icon: '👥', label: 'Students' },
-  { to: '/warden/analytics',  icon: '📈', label: 'Analytics' },
+  { to: '/messages',          icon: '💬', label: 'Messages' },
+  { to: '/security',          icon: '🛡️', label: 'Gate Kiosk' },
 ]
 
 const COLORS = ['#f87171', '#fb923c', '#b91c1c']
@@ -126,7 +133,7 @@ export default function WardenDashboard() {
       </div>
 
       {/* Currently Out */}
-      <div className="bg-white border border-rose-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-rose-200 rounded-2xl p-5 shadow-sm mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[#3f0d12] font-bold text-sm">🚶 Currently Out of Hostel</h2>
           <span className="text-[#9f1239] text-xs">{out.length} students</span>
@@ -148,6 +155,116 @@ export default function WardenDashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Warden Operations & Services Hub */}
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[#3f0d12] uppercase tracking-wider mb-3">Warden Supervision & Management Modules</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/warden/supervision"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              🌐
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">3D Campus & Presence</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Live turnstile presence, overdue alerts & 3D twin</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/rooms"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              🏢
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Room Matrix & Allocation</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Block floorplans, bed assignments & swap approvals</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/mess"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              🍲
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Mess & Headcount Predictor</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Weekly menu editor, food waste savings & Sunday poll</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/visitors"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              👥
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Visitor Pass Approvals</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Review guest requests & gate access codes</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/finance"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              💳
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Fines & No-Dues Signoff</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Issue disciplinary fines & sign institutional clearance</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/operations"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              🛠️
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Central Complaints & Maint.</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Assign staff to electrical, plumbing & clean tasks</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/warden/incidents"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              ⚠️
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Student Incident Notices</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Issue formal breach notices & review explanations</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/security"
+            className="bg-white border border-rose-200 hover:border-red-400 rounded-2xl p-4 shadow-sm transition-all group flex items-start gap-3.5 hover:shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              🛡️
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3f0d12]">Gate Security Kiosk</h3>
+              <p className="text-[11px] text-rose-700 mt-0.5">Main gate guard terminal & live turnstile scanner</p>
+            </div>
+          </Link>
+        </div>
       </div>
     </Layout>
   )

@@ -26,6 +26,10 @@ public class LeaveDTOs {
 
         @NotNull
         private LocalDateTime expectedReturn;
+
+        private String wifiSsid;
+        private String networkBssid;
+        private boolean simulateCellular;
     }
 
     @Data
