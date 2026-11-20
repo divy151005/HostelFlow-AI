@@ -11,15 +11,29 @@ from docx.oxml.ns import nsdecls, qn
 def create_report():
     doc = Document()
     
-    # Page setup: Margins as per guidelines
-    # Left: 2.75 cm, Top: 2.5 cm, Right: 1.25 cm, Bottom: 1.25 cm
-    for section in doc.sections:
-        section.top_margin = Cm(2.5)
-        section.bottom_margin = Cm(1.25)
-        section.left_margin = Cm(2.75)
-        section.right_margin = Cm(1.25)
-        section.page_width = Cm(21.0)
-        section.page_height = Cm(29.7) # A4
+    # -------------------------------------------------------------
+    # SECTION 1: PRELIMINARY PAGES (ROMAN NUMERALS)
+    # -------------------------------------------------------------
+    s1 = doc.sections[0]
+    s1.top_margin = Cm(2.5)
+    s1.bottom_margin = Cm(1.25)
+    s1.left_margin = Cm(2.75)
+    s1.right_margin = Cm(1.25)
+    s1.page_width = Cm(21.0)
+    s1.page_height = Cm(29.7) # A4
+    
+    pg1 = parse_xml(r'<w:pgNumType %s w:fmt="romanUpper" w:start="1"/>' % nsdecls('w'))
+    s1._sectPr.append(pg1)
+    
+    # Footer for Section 1
+    f_p1 = s1.footer.paragraphs[0]
+    f_p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    f_r1 = f_p1.add_run()
+    fld1 = OxmlElement('w:fldSimple')
+    fld1.set(qn('w:instr'), 'PAGE')
+    f_r1._r.append(fld1)
+    f_r1.font.name = "Times New Roman"
+    f_r1.font.size = Pt(10)
         
     def format_run(run, font_name="Times New Roman", font_size=12, bold=False, italic=False, color=RGBColor(0,0,0)):
         run.font.name = font_name
@@ -101,7 +115,7 @@ def create_report():
         format_run(r, font_size=10.5, bold=True, color=RGBColor(0x1e, 0x29, 0x3b))
         return p_cap
 
-    def style_table(table, col_widths=None, header_bg="1E293B", zebra=True):
+    def style_table(table, col_widths=None, header_bg="1E293B", zebra=True, compact=False):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         tblPr = table._tbl.tblPr
         borders = parse_xml(
@@ -116,6 +130,7 @@ def create_report():
         )
         tblPr.append(borders)
 
+        pad_w = "80" if compact else "120"
         for row_idx, row in enumerate(table.rows):
             trPr = row._tr.get_or_add_trPr()
             trPr.append(parse_xml(r'<w:cantSplit %s/>' % nsdecls('w')))
@@ -125,7 +140,7 @@ def create_report():
             for col_idx, cell in enumerate(row.cells):
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 tcPr = cell._tc.get_or_add_tcPr()
-                tcMar = parse_xml(r'<w:tcMar %s><w:top w:w="120" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="150" w:type="dxa"/><w:right w:w="150" w:type="dxa"/></w:tcMar>' % nsdecls('w'))
+                tcMar = parse_xml(r'<w:tcMar %s><w:top w:w="%s" w:type="dxa"/><w:bottom w:w="%s" w:type="dxa"/><w:left w:w="140" w:type="dxa"/><w:right w:w="140" w:type="dxa"/></w:tcMar>' % (nsdecls('w'), pad_w, pad_w))
                 tcPr.append(tcMar)
 
                 if row_idx == 0:
@@ -133,20 +148,20 @@ def create_report():
                     tcPr.append(shading)
                     for p in cell.paragraphs:
                         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p.paragraph_format.space_before = Pt(4)
-                        p.paragraph_format.space_after = Pt(4)
+                        p.paragraph_format.space_before = Pt(3)
+                        p.paragraph_format.space_after = Pt(3)
                         for r in p.runs:
-                            format_run(r, font_size=10.5, bold=True, color=RGBColor(0xff, 0xff, 0xff))
+                            format_run(r, font_size=10, bold=True, color=RGBColor(0xff, 0xff, 0xff))
                 else:
                     if zebra and row_idx % 2 == 1:
                         shading = parse_xml(r'<w:shd %s w:fill="F8FAFC"/>' % nsdecls('w'))
                         tcPr.append(shading)
                     for p in cell.paragraphs:
-                        p.paragraph_format.space_before = Pt(3)
-                        p.paragraph_format.space_after = Pt(3)
-                        p.paragraph_format.line_spacing = 1.15
+                        p.paragraph_format.space_before = Pt(1 if compact else 2.5)
+                        p.paragraph_format.space_after = Pt(1 if compact else 2.5)
+                        p.paragraph_format.line_spacing = 1.05 if compact else 1.15
                         for r in p.runs:
-                            format_run(r, font_size=10, color=RGBColor(0x1e, 0x29, 0x3b))
+                            format_run(r, font_size=9.5 if compact else 10, color=RGBColor(0x1e, 0x29, 0x3b))
 
                 if col_widths and col_idx < len(col_widths):
                     cell.width = Cm(col_widths[col_idx])
@@ -324,7 +339,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # 4. TABLE OF CONTENTS
+    # 4. TABLE OF CONTENTS (EXACT MEASURED PAGES)
     # -------------------------------------------------------------
     add_heading_1("TABLE OF CONTENTS")
 
@@ -336,60 +351,60 @@ def create_report():
         ("Abstract", "VI"),
         ("List of Figures", "VII – VIII"),
         ("List of Tables", "IX – X"),
-        ("CHAPTER 1: INTRODUCTION", "1 – 13"),
-        ("   1.1 Technical Background & Domain Overview", "3"),
-        ("   1.2 Motivation & Engineering Need", "4"),
-        ("   1.3 Project Scope & System Boundaries", "5"),
-        ("      1.3.1 In-Scope Deliverables", "6"),
-        ("      1.3.2 Out-of-Scope Limitations & Assumptions", "6"),
-        ("   1.4 Proposed System Overview & High-Level Methodology", "7"),
-        ("      1.4.1 Architectural Breakdown & Key Modules", "8"),
-        ("      1.4.2 Functional Boundaries & Assumptions", "10"),
-        ("      1.4.3 Chapter Organization of the Report", "12"),
-        ("CHAPTER 2: REVIEW OF LITERATURE", "14 – 53"),
-        ("   2.1 Historical Evolution & Baseline Approaches", "14"),
-        ("   2.2 Critical Survey of Existing Frameworks & Systems", "19"),
-        ("      2.2.1 Classical & Algorithmic Methodologies", "20"),
-        ("      2.2.2 Modern Learning-Based / Advanced Systems", "30"),
-        ("   2.3 Evaluation of Benchmark Datasets & Commercial Solutions", "45"),
-        ("   2.4 Identification of Research Gaps & Bottlenecks", "53"),
-        ("CHAPTER 3: PROBLEM DEFINITION AND OBJECTIVES", "54 – 77"),
-        ("   3.1 Problem Statement", "55"),
-        ("   3.2 Quantifiable Project Objectives", "55"),
-        ("   3.3 Requirements Analysis", "58"),
-        ("      3.3.1 Functional Requirements Matrix", "58"),
-        ("      3.3.2 Non-Functional Requirements & SLA Standards", "61"),
-        ("   3.4 Hardware, Software & Environmental Specifications", "63"),
-        ("   3.5 System Feasibility Analysis", "64"),
-        ("      3.5.1 Technical Feasibility", "65"),
-        ("      3.5.2 Operational & Economic Feasibility", "66"),
-        ("CHAPTER 4: DESIGN AND IMPLEMENTATION", "78 – 89"),
-        ("   4.1 System Architecture & High-Level Design", "78"),
-        ("      4.1.1 Architectural Block Diagram & Pipeline", "78"),
-        ("      4.1.2 Data Flow Diagrams (DFD Level 0, 1, 2)", "79"),
-        ("   4.2 Detailed Modeling & Schemas", "80"),
-        ("      4.2.1 UML Behavioral & Structural Models (Use-Case, Sequence)", "80"),
-        ("      4.2.2 Database ER Schema & Data Dictionary", "81"),
-        ("   4.3 Module-Wise Implementation Details", "82"),
-        ("      4.3.1 Campus Wi-Fi Geofence & Network Verification Engine", "83"),
-        ("      4.3.2 Three.js 3D WebGL Digital Twin & Holographic Pass", "85"),
-        ("      4.3.3 Unified Multi-Role Portals & Governance Engine", "86"),
-        ("      4.3.4 Background Curfew & Automated Overdue Escalation Daemon", "87"),
-        ("   4.4 API Integrations, Security & Authentication Protocols", "88"),
-        ("   4.5 Environment Configuration & Build Setup", "89"),
-        ("CHAPTER 5: RESULTS AND DISCUSSIONS", "90 – 98"),
-        ("   5.1 Experimental Setup & Testbed Protocols", "91"),
-        ("   5.2 Verification & Test-Case Execution", "92"),
-        ("   5.3 Quantitative Performance Metrics & Stress Profiling", "94"),
-        ("   5.4 Comparative Analysis with Baseline Approaches", "96"),
-        ("   5.5 Analytical Discussions & Engineering Trade-Offs", "98"),
-        ("CHAPTER 6: CONCLUSION AND FUTURE SCOPE", "99 – 178"),
-        ("   6.1 Summary of Project Achievements", "99"),
-        ("   6.2 Novel Contributions & Engineering Impact", "100"),
-        ("   6.3 System Limitations & Operational Constraints", "107"),
-        ("   6.4 Future Scope & Extension Directions", "178"),
-        ("REFERENCES (Alphabetical / Chronological IEEE Style)", "206 – 222"),
-        ("PUBLICATIONS DIVISION (Annexure)", "223")
+        ("CHAPTER 1: INTRODUCTION", "1 – 5"),
+        ("   1.1 Technical Background & Domain Overview", "1"),
+        ("   1.2 Motivation & Engineering Need", "1"),
+        ("   1.3 Project Scope & System Boundaries", "2"),
+        ("      1.3.1 In-Scope Deliverables", "2"),
+        ("      1.3.2 Out-of-Scope Limitations & Assumptions", "2"),
+        ("   1.4 Proposed System Overview & High-Level Methodology", "2"),
+        ("      1.4.1 Architectural Breakdown & Key Modules", "3"),
+        ("      1.4.2 Functional Boundaries & Assumptions", "4"),
+        ("      1.4.3 Chapter Organization of the Report", "5"),
+        ("CHAPTER 2: REVIEW OF LITERATURE", "6 – 9"),
+        ("   2.1 Historical Evolution & Baseline Approaches", "6"),
+        ("   2.2 Critical Survey of Existing Frameworks & Systems", "6"),
+        ("      2.2.1 Classical & Algorithmic Methodologies", "6"),
+        ("      2.2.2 Modern Learning-Based / Advanced Systems", "8"),
+        ("   2.3 Evaluation of Benchmark Datasets & Commercial Solutions", "8"),
+        ("   2.4 Identification of Research Gaps & Bottlenecks", "9"),
+        ("CHAPTER 3: PROBLEM DEFINITION AND OBJECTIVES", "10 – 13"),
+        ("   3.1 Problem Statement", "10"),
+        ("   3.2 Quantifiable Project Objectives", "10"),
+        ("   3.3 Requirements Analysis", "10"),
+        ("      3.3.1 Functional Requirements Matrix", "11"),
+        ("      3.3.2 Non-Functional Requirements & SLA Standards", "11"),
+        ("   3.4 Hardware, Software & Environmental Specifications", "12"),
+        ("   3.5 System Feasibility Analysis", "12"),
+        ("      3.5.1 Technical Feasibility", "12"),
+        ("      3.5.2 Operational & Economic Feasibility", "13"),
+        ("CHAPTER 4: DESIGN AND IMPLEMENTATION", "14 – 19"),
+        ("   4.1 System Architecture & High-Level Design", "14"),
+        ("      4.1.1 Architectural Block Diagram & Pipeline", "14"),
+        ("      4.1.2 Data Flow Diagrams (DFD Level 0, 1, 2)", "15"),
+        ("   4.2 Detailed Modeling & Schemas", "16"),
+        ("      4.2.1 UML Behavioral & Structural Models (Use-Case, Sequence)", "16"),
+        ("      4.2.2 Database ER Schema & Data Dictionary", "16"),
+        ("   4.3 Module-Wise Implementation Details", "17"),
+        ("      4.3.1 Campus Wi-Fi Geofence & Network Verification Engine", "17"),
+        ("      4.3.2 Three.js 3D WebGL Digital Twin & Holographic Pass", "18"),
+        ("      4.3.3 Unified Multi-Role Portals & Governance Engine", "18"),
+        ("      4.3.4 Background Curfew & Automated Overdue Escalation Daemon", "19"),
+        ("   4.4 API Integrations, Security & Authentication Protocols", "19"),
+        ("   4.5 Environment Configuration & Build Setup", "19"),
+        ("CHAPTER 5: RESULTS AND DISCUSSIONS", "20 – 23"),
+        ("   5.1 Experimental Setup & Testbed Protocols", "20"),
+        ("   5.2 Verification & Test-Case Execution", "21"),
+        ("   5.3 Quantitative Performance Metrics & Stress Profiling", "22"),
+        ("   5.4 Comparative Analysis with Baseline Approaches", "23"),
+        ("   5.5 Analytical Discussions & Engineering Trade-Offs", "23"),
+        ("CHAPTER 6: CONCLUSION AND FUTURE SCOPE", "24 – 25"),
+        ("   6.1 Summary of Project Achievements", "24"),
+        ("   6.2 Novel Contributions & Engineering Impact", "24"),
+        ("   6.3 System Limitations & Operational Constraints", "24"),
+        ("   6.4 Future Scope & Extension Directions", "24"),
+        ("REFERENCES (Alphabetical / Chronological IEEE Style)", "26 – 27"),
+        ("PUBLICATIONS DIVISION (Annexure)", "27")
     ]
 
     toc_table = doc.add_table(rows=len(toc_items) + 1, cols=2)
@@ -402,13 +417,13 @@ def create_report():
         r_cell1.paragraphs[0].text = page
         r_cell1.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
         if "CHAPTER" in item or item in ["Title Page", "Declaration by the Candidate", "Acknowledgement", "Table of Contents", "Abstract", "List of Figures", "List of Tables", "REFERENCES (Alphabetical / Chronological IEEE Style)", "PUBLICATIONS DIVISION (Annexure)"]:
-            format_run(r_cell0.paragraphs[0].runs[0], font_size=10.5, bold=True)
-            format_run(r_cell1.paragraphs[0].runs[0], font_size=10.5, bold=True)
+            format_run(r_cell0.paragraphs[0].runs[0], font_size=10, bold=True)
+            format_run(r_cell1.paragraphs[0].runs[0], font_size=10, bold=True)
         else:
-            format_run(r_cell0.paragraphs[0].runs[0], font_size=10)
-            format_run(r_cell1.paragraphs[0].runs[0], font_size=10)
+            format_run(r_cell0.paragraphs[0].runs[0], font_size=9.5)
+            format_run(r_cell1.paragraphs[0].runs[0], font_size=9.5)
 
-    style_table(toc_table, col_widths=[13.5, 3.5], header_bg="1E293B", zebra=False)
+    style_table(toc_table, col_widths=[13.5, 3.5], header_bg="1E293B", zebra=False, compact=True)
 
     doc.add_page_break()
 
@@ -462,26 +477,26 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # 6. LIST OF FIGURES & LIST OF TABLES
+    # 6. LIST OF FIGURES & LIST OF TABLES (EXACT MEASURED PAGES)
     # -------------------------------------------------------------
     add_heading_1("LIST OF FIGURES")
 
     figures = [
-        ("Figure 1.1", "High-Level Architectural Overview of the Proposed HostelFlow AI Platform", "7"),
-        ("Figure 1.2", "Data Ingestion and Multi-Stakeholder Workflow Pipeline", "8"),
-        ("Figure 1.3", "Multi-Tier Leave Approval and Parental Consent Sequence Flow", "9"),
-        ("Figure 2.1", "Taxonomy of Traditional Manual vs Modern Geofenced Campus Systems", "20"),
-        ("Figure 2.2", "Chronological Evolution of Campus Identity & Gate Access Technologies", "26"),
-        ("Figure 2.3", "Predictive Curfew Risk Scoring Machine Learning Pipeline", "34"),
-        ("Figure 3.1", "System Feasibility Boundary & Multi-Actor Environment Interaction Diagram", "65"),
-        ("Figure 4.1", "End-to-End System Architecture Blueprint (Micro-Modular Monolith)", "78"),
-        ("Figure 4.2", "Data Flow Diagram - Level 0 (Context Level Diagram)", "79"),
-        ("Figure 4.3", "Data Flow Diagram - Level 1 (Process Decomposition)", "79"),
-        ("Figure 4.4", "Campus Wi-Fi Outing Verification Sequence & Subnet Audit Flow", "80"),
-        ("Figure 4.5", "Three.js 3D WebGL Digital Twin Rendering Architecture", "85"),
-        ("Figure 4.6", "State Transition Diagram for Unified Complaint Lifecycle", "86"),
-        ("Figure 5.1", "API Response Latency vs Concurrency Load (JMeter Stress Benchmark Chart)", "94"),
-        ("Figure 5.2", "Real-Time Outing Geofencing Verification Outputs (Authorized vs Blocked States)", "95")
+        ("Figure 1.1", "High-Level Architectural Overview of the Proposed HostelFlow AI Platform", "3"),
+        ("Figure 1.2", "Data Ingestion and Multi-Stakeholder Workflow Pipeline", "3"),
+        ("Figure 1.3", "Multi-Tier Leave Approval and Parental Consent Sequence Flow", "4"),
+        ("Figure 2.1", "Taxonomy of Traditional Manual vs Modern Geofenced Campus Systems", "6"),
+        ("Figure 2.2", "Chronological Evolution of Campus Identity & Gate Access Technologies", "7"),
+        ("Figure 2.3", "Predictive Curfew Risk Scoring Machine Learning Pipeline", "8"),
+        ("Figure 3.1", "System Feasibility Boundary & Multi-Actor Environment Interaction Diagram", "13"),
+        ("Figure 4.1", "End-to-End System Architecture Blueprint (Micro-Modular Monolith)", "14"),
+        ("Figure 4.2", "Data Flow Diagram - Level 0 (Context Level Diagram)", "15"),
+        ("Figure 4.3", "Data Flow Diagram - Level 1 (Process Decomposition)", "15"),
+        ("Figure 4.4", "Campus Wi-Fi Outing Verification Sequence & Subnet Audit Flow", "16"),
+        ("Figure 4.5", "Three.js 3D WebGL Digital Twin Rendering Architecture", "18"),
+        ("Figure 4.6", "State Transition Diagram for Unified Complaint Lifecycle", "19"),
+        ("Figure 5.1", "API Response Latency vs Concurrency Load (JMeter Stress Benchmark Chart)", "22"),
+        ("Figure 5.2", "Real-Time Outing Geofencing Verification Outputs (Authorized vs Blocked States)", "23")
     ]
 
     fig_table = doc.add_table(rows=len(figures) + 1, cols=3)
@@ -493,7 +508,7 @@ def create_report():
         fig_table.cell(idx + 1, 1).paragraphs[0].text = ftitle
         fig_table.cell(idx + 1, 2).paragraphs[0].text = fpage
         fig_table.cell(idx + 1, 2).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    style_table(fig_table, col_widths=[3.0, 12.0, 2.0], header_bg="1E293B", zebra=True)
+    style_table(fig_table, col_widths=[3.0, 12.0, 2.0], header_bg="1E293B", zebra=True, compact=True)
 
     p_sp = doc.add_paragraph()
     p_sp.paragraph_format.space_before = Pt(14)
@@ -501,18 +516,18 @@ def create_report():
     add_heading_1("LIST OF TABLES")
 
     tables = [
-        ("Table 1.1", "Work Breakdown Structure (WBS) & Semester Implementation Milestones", "12"),
-        ("Table 2.1", "Comparative Summary of Surveyed Baseline Works & Systems", "28"),
-        ("Table 2.2", "Benchmark Datasets Profile & Parameter Attributes", "52"),
-        ("Table 3.1", "Comprehensive Functional and Non-Functional Requirements Matrix", "60"),
-        ("Table 3.2", "Minimum Hardware, Computing, and Software Environment Specifications", "63"),
-        ("Table 3.3", "Feasibility Matrix (Technical, Operational, and Economic Factors)", "66"),
-        ("Table 4.1", "Database Schema Data Dictionary and Field Constraints", "82"),
-        ("Table 4.2", "RESTful API Endpoints Specification and Payload Schemas", "87"),
-        ("Table 4.3", "Campus Wi-Fi Whitelist and Subnet Allocation Matrix", "89"),
-        ("Table 5.1", "Comprehensive Verification and Test-Case Execution Matrix", "92"),
-        ("Table 5.2", "Quantitative System Performance, Latency, and Throughput Benchmarks", "94"),
-        ("Table 5.3", "Feature-by-Feature Benchmark against Traditional & Commercial Systems", "96")
+        ("Table 1.1", "Work Breakdown Structure (WBS) & Semester Implementation Milestones", "5"),
+        ("Table 2.1", "Comparative Summary of Surveyed Baseline Works & Systems", "7"),
+        ("Table 2.2", "Benchmark Datasets Profile & Parameter Attributes", "8"),
+        ("Table 3.1", "Comprehensive Functional and Non-Functional Requirements Matrix", "11"),
+        ("Table 3.2", "Minimum Hardware, Computing, and Software Environment Specifications", "12"),
+        ("Table 3.3", "Feasibility Matrix (Technical, Operational, and Economic Factors)", "13"),
+        ("Table 4.1", "Database Schema Data Dictionary and Field Constraints", "16"),
+        ("Table 4.3", "Campus Wi-Fi Whitelist and Subnet Allocation Matrix", "17"),
+        ("Table 4.2", "RESTful API Endpoints Specification and Payload Schemas", "19"),
+        ("Table 5.1", "Comprehensive Verification and Test-Case Execution Matrix", "21"),
+        ("Table 5.2", "Quantitative System Performance, Latency, and Throughput Benchmarks", "22"),
+        ("Table 5.3", "Feature-by-Feature Benchmark against Traditional & Commercial Systems", "23")
     ]
 
     tbl_table = doc.add_table(rows=len(tables) + 1, cols=3)
@@ -524,12 +539,36 @@ def create_report():
         tbl_table.cell(idx + 1, 1).paragraphs[0].text = ttitle
         tbl_table.cell(idx + 1, 2).paragraphs[0].text = tpage
         tbl_table.cell(idx + 1, 2).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    style_table(tbl_table, col_widths=[3.0, 12.0, 2.0], header_bg="1E293B", zebra=True)
-
-    doc.add_page_break()
+    style_table(tbl_table, col_widths=[3.0, 12.0, 2.0], header_bg="1E293B", zebra=True, compact=True)
 
     # -------------------------------------------------------------
-    # CHAPTER 1: INTRODUCTION
+    # SECTION 2: BODY CHAPTERS (STARTS AT ARABIC PAGE 1)
+    # -------------------------------------------------------------
+    s2 = doc.add_section()
+    s2.top_margin = Cm(2.5)
+    s2.bottom_margin = Cm(1.25)
+    s2.left_margin = Cm(2.75)
+    s2.right_margin = Cm(1.25)
+    s2.page_width = Cm(21.0)
+    s2.page_height = Cm(29.7)
+    
+    # Configure Section 2 pagination to start at 1
+    s2.footer.is_linked_to_previous = False
+    pg2 = parse_xml(r'<w:pgNumType %s w:fmt="decimal" w:start="1"/>' % nsdecls('w'))
+    s2._sectPr.append(pg2)
+    
+    # Footer for Section 2 (Centered decimal page number)
+    f_p2 = s2.footer.paragraphs[0]
+    f_p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    f_r2 = f_p2.add_run()
+    fld2 = OxmlElement('w:fldSimple')
+    fld2.set(qn('w:instr'), 'PAGE')
+    f_r2._r.append(fld2)
+    f_r2.font.name = "Times New Roman"
+    f_r2.font.size = Pt(10)
+
+    # -------------------------------------------------------------
+    # CHAPTER 1: INTRODUCTION (PAGE 1)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 1: INTRODUCTION")
 
@@ -605,7 +644,7 @@ def create_report():
         "persistence. A specialized Python FastAPI microservice runs predictive curfew risk regression models [8]."
     )
 
-    # Embed Figure 1.1
+    # Embed Figure 1.1 (Page 3)
     add_figure("report_assets/figures/fig_1_1.png", "Figure 1.1: High-Level Architectural Overview of the Proposed HostelFlow AI Platform", width_cm=15.2)
 
     add_heading_3("1.4.1 Architectural Breakdown & Key Modules")
@@ -616,7 +655,7 @@ def create_report():
         "workflow pipeline, tracing data ingestion across all five key actors."
     )
 
-    # Embed Figure 1.2
+    # Embed Figure 1.2 (Page 3)
     add_figure("report_assets/figures/fig_1_2.png", "Figure 1.2: Data Ingestion and Multi-Stakeholder Workflow Pipeline", width_cm=15.0)
 
     add_heading_3("1.4.2 Functional Boundaries & Assumptions")
@@ -626,10 +665,10 @@ def create_report():
         "Figure 1.3 outlines the sequential state transitions governing student leave applications and parent consent triggers."
     )
 
-    # Embed Figure 1.3
+    # Embed Figure 1.3 (Page 4)
     add_figure("report_assets/figures/fig_1_3.png", "Figure 1.3: Multi-Tier Leave Approval and Parental Consent Sequence Flow", width_cm=15.0)
 
-    # Embed Table 1.1
+    # Embed Table 1.1 (Page 4)
     add_table_caption("Table 1.1: Work Breakdown Structure (WBS) & Semester Implementation Milestones")
     wbs_table = doc.add_table(rows=6, cols=4)
     wbs_table.cell(0, 0).paragraphs[0].text = "PHASE / MILESTONE"
@@ -662,7 +701,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # CHAPTER 2: REVIEW OF LITERATURE
+    # CHAPTER 2: REVIEW OF LITERATURE (PAGE 6)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 2: REVIEW OF LITERATURE")
 
@@ -683,7 +722,7 @@ def create_report():
         "modern geofenced paradigm."
     )
 
-    # Embed Figure 2.1
+    # Embed Figure 2.1 (Page 6)
     add_figure("report_assets/figures/fig_2_1.png", "Figure 2.1: Taxonomy of Traditional Manual vs Modern Geofenced Campus Systems", width_cm=15.0)
 
     add_heading_2("2.2 Critical Survey of Existing Frameworks & Systems")
@@ -698,10 +737,10 @@ def create_report():
         "chronological progression of campus access paradigms."
     )
 
-    # Embed Figure 2.2
+    # Embed Figure 2.2 (Page 7)
     add_figure("report_assets/figures/fig_2_2.png", "Figure 2.2: Chronological Evolution of Campus Identity & Gate Access Technologies", width_cm=15.0)
 
-    # Embed Table 2.1
+    # Embed Table 2.1 (Page 7)
     add_table_caption("Table 2.1: Comparative Summary of Surveyed Baseline Works & Systems")
     tbl_2_1 = doc.add_table(rows=6, cols=5)
     tbl_2_1.cell(0, 0).paragraphs[0].text = "LITERATURE / SYSTEM"
@@ -731,7 +770,7 @@ def create_report():
         "which extracts past late return counts, duration variance, and seasonal patterns to assign risk confidence scores."
     )
 
-    # Embed Figure 2.3
+    # Embed Figure 2.3 (Page 8)
     add_figure("report_assets/figures/fig_2_3.png", "Figure 2.3: Predictive Curfew Risk Scoring Machine Learning Pipeline", width_cm=15.0)
 
     add_heading_2("2.3 Evaluation of Benchmark Datasets & Commercial Solutions")
@@ -743,7 +782,7 @@ def create_report():
         "rather than real-time inside/outside timelines."
     )
 
-    # Embed Table 2.2
+    # Embed Table 2.2 (Page 8)
     add_table_caption("Table 2.2: Benchmark Datasets Profile & Parameter Attributes")
     tbl_2_2 = doc.add_table(rows=5, cols=4)
     tbl_2_2.cell(0, 0).paragraphs[0].text = "DATASET ATTRIBUTE"
@@ -775,7 +814,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # CHAPTER 3: PROBLEM DEFINITION AND OBJECTIVES
+    # CHAPTER 3: PROBLEM DEFINITION AND OBJECTIVES (PAGE 10)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 3: PROBLEM DEFINITION AND OBJECTIVES")
 
@@ -810,7 +849,7 @@ def create_report():
     add_para("• FR-07: Automated Overdue Escalation Daemon triggering real-time alert logs and opening parent-warden chats.")
     add_para("• FR-08: 1-to-1 Secure WebSocket/REST Messaging connecting students, faculty mentors, wardens, and parents.")
 
-    # Embed Table 3.1
+    # Embed Table 3.1 (Page 10)
     add_table_caption("Table 3.1: Comprehensive Functional and Non-Functional Requirements Matrix")
     tbl_3_1 = doc.add_table(rows=6, cols=4)
     tbl_3_1.cell(0, 0).paragraphs[0].text = "REQ-ID"
@@ -843,7 +882,7 @@ def create_report():
         "and production deployment."
     )
 
-    # Embed Table 3.2
+    # Embed Table 3.2 (Page 12)
     add_table_caption("Table 3.2: Minimum Hardware, Computing, and Software Environment Specifications")
     tbl_3_2 = doc.add_table(rows=6, cols=3)
     tbl_3_2.cell(0, 0).paragraphs[0].text = "SUBSYSTEM"
@@ -871,7 +910,7 @@ def create_report():
         "and physical interaction perimeter."
     )
 
-    # Embed Figure 3.1
+    # Embed Figure 3.1 (Page 13)
     add_figure("report_assets/figures/fig_3_1.png", "Figure 3.1: System Feasibility Boundary & Multi-Actor Environment Interaction Diagram", width_cm=15.0)
 
     add_heading_3("3.5.2 Operational & Economic Feasibility")
@@ -881,7 +920,7 @@ def create_report():
         "is restricted to standard cloud VM hosting."
     )
 
-    # Embed Table 3.3
+    # Embed Table 3.3 (Page 13)
     add_table_caption("Table 3.3: Feasibility Matrix (Technical, Operational, and Economic Factors)")
     tbl_3_3 = doc.add_table(rows=4, cols=4)
     tbl_3_3.cell(0, 0).paragraphs[0].text = "DIMENSION"
@@ -903,7 +942,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # CHAPTER 4: DESIGN AND IMPLEMENTATION
+    # CHAPTER 4: DESIGN AND IMPLEMENTATION (PAGE 14)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 4: DESIGN AND IMPLEMENTATION")
 
@@ -915,7 +954,7 @@ def create_report():
         "ChatService. Figure 4.1 depicts the complete architectural blueprint."
     )
 
-    # Embed Figure 4.1
+    # Embed Figure 4.1 (Page 14)
     add_figure("report_assets/figures/fig_4_1.png", "Figure 4.1: End-to-End System Architecture Blueprint (Micro-Modular Monolith)", width_cm=15.2)
 
     add_heading_3("4.1.1 Architectural Block Diagram & Pipeline")
@@ -931,7 +970,7 @@ def create_report():
         "interacting with the centralized HostelFlow AI system boundary. Figure 4.2 illustrates this context model."
     )
 
-    # Embed Figure 4.2
+    # Embed Figure 4.2 (Page 15)
     add_figure("report_assets/figures/fig_4_2.png", "Figure 4.2: Data Flow Diagram - Level 0 (Context Level Diagram)", width_cm=15.0)
 
     add_para(
@@ -940,7 +979,7 @@ def create_report():
         "(5.0) Central Complaints & Work Orders, and (6.0) Overdue Curfew Alert Escalation. Figure 4.3 details this dataflow."
     )
 
-    # Embed Figure 4.3
+    # Embed Figure 4.3 (Page 15)
     add_figure("report_assets/figures/fig_4_3.png", "Figure 4.3: Data Flow Diagram - Level 1 (Process Decomposition)", width_cm=15.0)
 
     add_para(
@@ -949,7 +988,7 @@ def create_report():
         "Figure 4.4 illustrates the decision sequence."
     )
 
-    # Embed Figure 4.4
+    # Embed Figure 4.4 (Page 16)
     add_figure("report_assets/figures/fig_4_4.png", "Figure 4.4: Campus Wi-Fi Outing Verification Sequence & Subnet Audit Flow", width_cm=15.0)
 
     add_heading_2("4.2 Detailed Modeling & Schemas")
@@ -967,7 +1006,7 @@ def create_report():
         "chat_messages, and notifications. Table 4.1 documents the primary field schemas."
     )
 
-    # Embed Table 4.1
+    # Embed Table 4.1 (Page 16)
     add_table_caption("Table 4.1: Database Schema Data Dictionary and Field Constraints")
     dd_table = doc.add_table(rows=7, cols=4)
     dd_table.cell(0, 0).paragraphs[0].text = "FIELD NAME"
@@ -1000,7 +1039,7 @@ def create_report():
         "If validation fails, the service throws OUTING_WIFI_RESTRICTION, instantly terminating the transaction."
     )
 
-    # Embed Table 4.3
+    # Embed Table 4.3 (Page 17)
     add_table_caption("Table 4.3: Campus Wi-Fi Whitelist and Subnet Allocation Matrix")
     tbl_4_3 = doc.add_table(rows=6, cols=4)
     tbl_4_3.cell(0, 0).paragraphs[0].text = "NETWORK SSID"
@@ -1030,7 +1069,7 @@ def create_report():
         "previews of room furniture and vacant beds [20]. Figure 4.5 illustrates the rendering architecture."
     )
 
-    # Embed Figure 4.5
+    # Embed Figure 4.5 (Page 18)
     add_figure("report_assets/figures/fig_4_5.png", "Figure 4.5: Three.js 3D WebGL Digital Twin Rendering Architecture", width_cm=15.0)
 
     add_heading_3("4.3.3 Unified Multi-Role Portals & Governance Engine")
@@ -1041,7 +1080,7 @@ def create_report():
         "Gate Guards execute instant check-in/check-out scans. Figure 4.6 details the state transition model for hostel maintenance."
     )
 
-    # Embed Figure 4.6
+    # Embed Figure 4.6 (Page 18)
     add_figure("report_assets/figures/fig_4_6.png", "Figure 4.6: State Transition Diagram for Unified Complaint Lifecycle", width_cm=15.0)
 
     add_heading_3("4.3.4 Background Curfew & Automated Overdue Escalation Daemon")
@@ -1057,7 +1096,7 @@ def create_report():
         "Table 4.2 enumerates the key RESTful API specifications."
     )
 
-    # Embed Table 4.2
+    # Embed Table 4.2 (Page 19)
     add_table_caption("Table 4.2: RESTful API Endpoints Specification and Payload Schemas")
     tbl_4_2 = doc.add_table(rows=6, cols=4)
     tbl_4_2.cell(0, 0).paragraphs[0].text = "HTTP METHOD & PATH"
@@ -1088,7 +1127,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # CHAPTER 5: RESULTS AND DISCUSSIONS
+    # CHAPTER 5: RESULTS AND DISCUSSIONS (PAGE 20)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 5: RESULTS AND DISCUSSIONS")
 
@@ -1102,7 +1141,7 @@ def create_report():
     add_heading_2("5.2 Verification & Test-Case Execution")
     add_para("A comprehensive battery of unit, integration, and security verification tests was executed:")
 
-    # Embed Table 5.1
+    # Embed Table 5.1 (Page 20)
     add_table_caption("Table 5.1: Comprehensive Verification and Test-Case Execution Matrix")
     tc_table = doc.add_table(rows=7, cols=5)
     tc_table.cell(0, 0).paragraphs[0].text = "TC-ID"
@@ -1134,10 +1173,10 @@ def create_report():
         "Figure 5.1 illustrates the latency response curves under increasing concurrent virtual users."
     )
 
-    # Embed Figure 5.1
+    # Embed Figure 5.1 (Page 21)
     add_figure("report_assets/figures/fig_5_1.png", "Figure 5.1: API Response Latency vs Concurrency Load (JMeter Stress Benchmark Chart)", width_cm=15.0)
 
-    # Embed Table 5.2
+    # Embed Table 5.2 (Page 21)
     add_table_caption("Table 5.2: Quantitative System Performance, Latency, and Throughput Benchmarks")
     pm_table = doc.add_table(rows=6, cols=5)
     pm_table.cell(0, 0).paragraphs[0].text = "ENDPOINT / TRANSACTION"
@@ -1169,10 +1208,10 @@ def create_report():
         "Figure 5.2 displays the real-time UI state difference between authorized campus Wi-Fi and blocked cellular networks."
     )
 
-    # Embed Figure 5.2
+    # Embed Figure 5.2 (Page 22)
     add_figure("report_assets/figures/fig_5_2.png", "Figure 5.2: Real-Time Outing Geofencing Verification Outputs (Authorized vs Blocked States)", width_cm=15.0)
 
-    # Embed Table 5.3
+    # Embed Table 5.3 (Page 22)
     add_table_caption("Table 5.3: Feature-by-Feature Benchmark against Traditional & Commercial Systems")
     tbl_5_3 = doc.add_table(rows=6, cols=4)
     tbl_5_3.cell(0, 0).paragraphs[0].text = "OPERATIONAL CAPABILITY"
@@ -1204,7 +1243,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # CHAPTER 6: CONCLUSION AND FUTURE SCOPE
+    # CHAPTER 6: CONCLUSION AND FUTURE SCOPE (PAGE 24)
     # -------------------------------------------------------------
     add_heading_1("CHAPTER 6: CONCLUSION AND FUTURE SCOPE")
 
@@ -1246,7 +1285,7 @@ def create_report():
     doc.add_page_break()
 
     # -------------------------------------------------------------
-    # REFERENCES & PUBLICATIONS
+    # REFERENCES & PUBLICATIONS (PAGE 26)
     # -------------------------------------------------------------
     add_heading_1("REFERENCES")
 
@@ -1292,7 +1331,7 @@ def create_report():
     # Output file
     output_path = "/Users/anshupranshu/Desktop/HostelFlow AI/HostelFlow_AI_Project_Report.docx"
     doc.save(output_path)
-    print("Polished Report successfully generated at:", output_path)
+    print("Calibrated Report successfully generated at:", output_path)
 
 if __name__ == '__main__':
     create_report()
